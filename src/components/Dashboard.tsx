@@ -1,11 +1,17 @@
 import { useExpenses } from '@/context/ExpenseContext';
 import { useAuth } from '@/context/AuthContext';
 import BalanceCard from '@/components/BalanceCard';
+import InsightsAnalytics from '@/components/InsightsAnalytics';
 import ExpenseForm from '@/components/ExpenseForm';
+import IncomeForm from '@/components/IncomeForm';
 import ExpenseList from '@/components/ExpenseList';
+import IncomeList from '@/components/IncomeList';
+import RecurringExpenses from '@/components/RecurringExpenses';
+import CategoryManager from '@/components/CategoryManager';
 import BalanceSetup from '@/components/BalanceSetup';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Dashboard = () => {
   const { initialBalance, loading } = useExpenses();
@@ -32,6 +38,7 @@ const Dashboard = () => {
             <span className="text-xs text-muted-foreground font-mono">
               {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
             </span>
+            <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
               <LogOut className="w-4 h-4" />
             </Button>
@@ -39,7 +46,12 @@ const Dashboard = () => {
         </div>
 
         <BalanceCard />
+        <InsightsAnalytics />
         <ExpenseForm />
+        <IncomeForm />
+        <RecurringExpenses />
+        <CategoryManager />
+        <IncomeList />
         <ExpenseList />
       </div>
     </div>
