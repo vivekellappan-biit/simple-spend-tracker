@@ -5,7 +5,7 @@ const BalanceCard = () => {
   const { currentBalance, totalExpenses, initialBalance } = useExpenses();
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
 
   const spentPercentage = initialBalance ? Math.min((totalExpenses / initialBalance) * 100, 100) : 0;
 

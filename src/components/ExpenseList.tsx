@@ -26,7 +26,7 @@ const ExpenseItem = ({ expense, onDelete }: { expense: Expense; onDelete: (id: s
         <p className="text-xs text-muted-foreground">{expense.category} · {format(new Date(expense.date), 'MMM d')}</p>
       </div>
       <p className="text-sm font-semibold font-mono text-expense shrink-0">
-        -${expense.amount.toFixed(2)}
+        -₹{expense.amount.toFixed(2)}
       </p>
       <button
         onClick={() => onDelete(expense.id)}
