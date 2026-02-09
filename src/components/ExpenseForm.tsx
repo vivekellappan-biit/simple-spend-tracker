@@ -70,7 +70,7 @@ const ExpenseForm = () => {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">$</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">₹</span>
           <Input
             type="number"
             step="0.01"

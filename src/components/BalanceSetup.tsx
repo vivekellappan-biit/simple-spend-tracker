@@ -41,7 +41,7 @@ const BalanceSetup = () => {
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-lg">
-                $
+                ₹
               </span>
               <Input
                 type="number"
