@@ -75,53 +75,8 @@ const InsightsAnalytics = () => {
     return [...top, { name: 'Other', value: restTotal }];
   }, [expenses]);
 
-  const kpiData = useMemo(() => {
-    const now = new Date();
-    const monthKey = format(now, 'yyyy-MM');
-    const monthStart = startOfMonth(now);
-    const daysSoFar = Math.max(1, Math.ceil((now.getTime() - monthStart.getTime()) / 86400000));
-
-    const monthIncome = incomes
-      .filter(i => format(new Date(i.date), 'yyyy-MM') === monthKey)
-      .reduce((sum, item) => sum + item.amount, 0);
-
-    const monthExpense = expenses
-      .filter(e => format(new Date(e.date), 'yyyy-MM') === monthKey)
-      .reduce((sum, item) => sum + item.amount, 0);
-
-    return {
-      net: monthIncome - monthExpense,
-      avgDailySpend: monthExpense / daysSoFar,
-      categories: categories.length,
-    };
-  }, [expenses, incomes, categories]);
-
   return (
     <div className="space-y-3">
-      <div className="bg-card rounded-2xl border border-border p-4">
-        <h3 className="font-semibold text-foreground text-sm mb-2">Insights</h3>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Net This Month</p>
-            <p className={`text-lg font-semibold font-mono ${kpiData.net >= 0 ? 'text-income' : 'text-expense'}`}>
-              {formatCurrency(kpiData.net)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Avg Daily Spend</p>
-            <p className="text-lg font-semibold font-mono text-expense">
-              {formatCurrency(kpiData.avgDailySpend)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-background p-3">
-            <p className="text-xs text-muted-foreground">Categories</p>
-            <p className="text-lg font-semibold font-mono text-foreground">
-              {kpiData.categories}
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 gap-3">
         <div className="bg-card rounded-2xl border border-border p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2">Monthly Cashflow</h4>
@@ -183,34 +138,50 @@ const InsightsAnalytics = () => {
               Add expenses to see category insights.
             </div>
           ) : (
-            <ChartContainer
-              className="h-56 w-full"
-              config={Object.fromEntries(
-                categoryData.map((item, index) => [
-                  item.name,
-                  {
-                    label: item.name,
-                    color: `hsl(var(--chart-${(index % 5) + 1}))`,
-                  },
-                ]),
-              )}
-            >
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Pie
-                  data={categoryData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={48}
-                  outerRadius={80}
-                  paddingAngle={3}
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={entry.name} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px] sm:items-center">
+              <ChartContainer
+                className="h-56 w-full"
+                config={Object.fromEntries(
+                  categoryData.map((item, index) => [
+                    item.name,
+                    {
+                      label: item.name,
+                      color: `hsl(var(--chart-${(index % 5) + 1}))`,
+                    },
+                  ]),
+                )}
+              >
+                <PieChart>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Pie
+                    data={categoryData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={48}
+                    outerRadius={80}
+                    paddingAngle={3}
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={entry.name} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+              <div className="space-y-2 text-xs">
+                {categoryData.map((entry, index) => (
+                  <div key={entry.name} className="flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: `hsl(var(--chart-${(index % 5) + 1}))` }}
+                    />
+                    <span className="flex-1 text-muted-foreground">{entry.name}</span>
+                    <span className="font-mono text-foreground">
+                      {formatCurrency(entry.value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

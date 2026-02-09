@@ -151,7 +151,7 @@ const ExpenseItem = ({
   );
 };
 
-const ExpenseList = () => {
+const ExpenseList = ({ onAddClick }: { onAddClick?: () => void }) => {
   const { expenses, deleteExpense, updateExpense, categories } = useExpenses();
 
   if (expenses.length === 0) {
@@ -165,7 +165,17 @@ const ExpenseList = () => {
 
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
-      <h3 className="font-semibold text-foreground text-sm mb-2">Recent Expenses</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-foreground text-sm">Recent Expenses</h3>
+        {onAddClick && (
+          <button
+            onClick={onAddClick}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Add Expense
+          </button>
+        )}
+      </div>
       <div className="divide-y divide-border">
         {expenses.map(expense => (
           <ExpenseItem

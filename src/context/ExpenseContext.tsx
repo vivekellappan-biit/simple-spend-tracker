@@ -18,6 +18,9 @@ export interface RecurringExpense {
   amount: number;
   category: string;
   day_of_month: number;
+  frequency: 'monthly' | 'yearly' | 'custom';
+  interval_days: number | null;
+  month_of_year: number | null;
   start_date: string;
   last_added_date: string | null;
   active: boolean;
@@ -93,6 +96,11 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
     return new Date(year, monthIndex, safeDay);
   };
 
+  const getYearlyDueDate = (year: number, monthOfYear: number, dayOfMonth: number) => {
+    const monthIndex = Math.min(Math.max(monthOfYear, 1), 12) - 1;
+    return getDueDate(year, monthIndex, dayOfMonth);
+  };
+
   const applyRecurringExpenses = useCallback(async (items: RecurringExpense[]) => {
     if (!user || items.length === 0) return;
 
@@ -108,13 +116,32 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
 
       if (item.last_added_date) {
         const lastAdded = new Date(item.last_added_date);
-        if (lastAdded.getFullYear() === year && lastAdded.getMonth() === month) {
+        if (item.frequency === 'monthly' && lastAdded.getFullYear() === year && lastAdded.getMonth() === month) {
           continue;
+        }
+        if (item.frequency === 'yearly' && lastAdded.getFullYear() === year) {
+          continue;
+        }
+        if (item.frequency === 'custom' && item.interval_days) {
+          const nextDue = new Date(lastAdded);
+          nextDue.setDate(nextDue.getDate() + item.interval_days);
+          if (today < nextDue) continue;
         }
       }
 
-      const dueDate = getDueDate(year, month, Number(item.day_of_month));
-      if (today < dueDate) continue;
+      let dueDate: Date | null = null;
+      if (item.frequency === 'monthly') {
+        dueDate = getDueDate(year, month, Number(item.day_of_month));
+      } else if (item.frequency === 'yearly' && item.month_of_year) {
+        dueDate = getYearlyDueDate(year, item.month_of_year, Number(item.day_of_month));
+      } else if (item.frequency === 'custom' && item.interval_days) {
+        const start = new Date(item.last_added_date || item.start_date);
+        const candidate = new Date(start);
+        candidate.setDate(candidate.getDate() + item.interval_days);
+        dueDate = candidate;
+      }
+
+      if (!dueDate || today < dueDate) continue;
 
       const dueDateString = formatDate(dueDate);
       const { data, error } = await supabase.from('expenses').insert({
@@ -188,6 +215,9 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
           ...e,
           amount: Number(e.amount),
           day_of_month: Number(e.day_of_month),
+          interval_days: e.interval_days === null ? null : Number(e.interval_days),
+          month_of_year: e.month_of_year === null ? null : Number(e.month_of_year),
+          frequency: (e.frequency as RecurringExpense['frequency']) || 'monthly',
         }));
         setRecurringExpenses(normalizedRecurring);
         await applyRecurringExpenses(normalizedRecurring);
@@ -292,6 +322,9 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       amount: expense.amount,
       category: expense.category,
       day_of_month: expense.day_of_month,
+      frequency: expense.frequency,
+      interval_days: expense.interval_days,
+      month_of_year: expense.month_of_year,
       start_date: expense.start_date,
       active: expense.active,
     }).select().single();
@@ -302,7 +335,13 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (data) {
-      const normalized = { ...data, amount: Number(data.amount), day_of_month: Number(data.day_of_month) };
+      const normalized = {
+        ...data,
+        amount: Number(data.amount),
+        day_of_month: Number(data.day_of_month),
+        interval_days: data.interval_days === null ? null : Number(data.interval_days),
+        month_of_year: data.month_of_year === null ? null : Number(data.month_of_year),
+      };
       setRecurringExpenses(prev => [normalized, ...prev]);
       await applyRecurringExpenses([normalized]);
     }
@@ -318,6 +357,9 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
         amount: updates.amount,
         category: updates.category,
         day_of_month: updates.day_of_month,
+        frequency: updates.frequency,
+        interval_days: updates.interval_days,
+        month_of_year: updates.month_of_year,
         start_date: updates.start_date,
         last_added_date: updates.last_added_date,
         active: updates.active,
@@ -336,7 +378,13 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       setRecurringExpenses(prev =>
         prev.map(item =>
           item.id === id
-            ? { ...data, amount: Number(data.amount), day_of_month: Number(data.day_of_month) }
+            ? {
+                ...data,
+                amount: Number(data.amount),
+                day_of_month: Number(data.day_of_month),
+                interval_days: data.interval_days === null ? null : Number(data.interval_days),
+                month_of_year: data.month_of_year === null ? null : Number(data.month_of_year),
+              }
             : item
         )
       );

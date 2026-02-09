@@ -124,8 +124,11 @@ export type Database = {
           created_at: string
           day_of_month: number
           description: string
+          frequency: string
           id: string
+          interval_days: number | null
           last_added_date: string | null
+          month_of_year: number | null
           start_date: string
           user_id: string
         }
@@ -136,8 +139,11 @@ export type Database = {
           created_at?: string
           day_of_month: number
           description: string
+          frequency?: string
           id?: string
+          interval_days?: number | null
           last_added_date?: string | null
+          month_of_year?: number | null
           start_date?: string
           user_id: string
         }
@@ -148,8 +154,11 @@ export type Database = {
           created_at?: string
           day_of_month?: number
           description?: string
+          frequency?: string
           id?: string
+          interval_days?: number | null
           last_added_date?: string | null
+          month_of_year?: number | null
           start_date?: string
           user_id?: string
         }

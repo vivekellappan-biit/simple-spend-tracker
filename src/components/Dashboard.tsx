@@ -1,5 +1,6 @@
 import { useExpenses } from '@/context/ExpenseContext';
 import { useAuth } from '@/context/AuthContext';
+import { useState } from 'react';
 import BalanceCard from '@/components/BalanceCard';
 import InsightsAnalytics from '@/components/InsightsAnalytics';
 import ExpenseForm from '@/components/ExpenseForm';
@@ -9,13 +10,14 @@ import IncomeList from '@/components/IncomeList';
 import RecurringExpenses from '@/components/RecurringExpenses';
 import CategoryManager from '@/components/CategoryManager';
 import BalanceSetup from '@/components/BalanceSetup';
-import { LogOut } from 'lucide-react';
+import { LogOut, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 
 const Dashboard = () => {
   const { initialBalance, loading } = useExpenses();
   const { signOut } = useAuth();
+  const [expenseFormOpen, setExpenseFormOpen] = useState(false);
 
   if (loading) {
     return (
@@ -47,13 +49,21 @@ const Dashboard = () => {
 
         <BalanceCard />
         <InsightsAnalytics />
-        <ExpenseForm />
+        <ExpenseList onAddClick={() => setExpenseFormOpen(true)} />
+        <ExpenseForm isOpen={expenseFormOpen} onOpenChange={setExpenseFormOpen} />
         <IncomeForm />
         <RecurringExpenses />
         <CategoryManager />
         <IncomeList />
-        <ExpenseList />
       </div>
+      <Button
+        className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full shadow-lg"
+        size="icon"
+        onClick={() => setExpenseFormOpen(true)}
+        title="Add expense"
+      >
+        <Plus className="w-5 h-5" />
+      </Button>
     </div>
   );
 };

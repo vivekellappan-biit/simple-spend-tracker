@@ -61,20 +61,40 @@ const BalanceCard = () => {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center justify-between text-muted-foreground text-xs mb-1">
-            <div className="flex items-center gap-1.5">
-              <ArrowDownRight className="w-3.5 h-3.5" />
-              <span>Initial</span>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-income/10 text-income">
+              <TrendingUp className="h-4 w-4" />
+            </span>
+            <div className="leading-none">
+              <p className="text-[11px] uppercase tracking-wide">Total Income</p>
+              <p className="text-base font-semibold font-mono text-income">
+                {formatCurrency(totalIncome)}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ArrowDownRight className="h-4 w-4" />
+              </span>
+              <div className="leading-none">
+                <p className="text-[11px] uppercase tracking-wide">Initial</p>
+                <p className="text-base font-semibold font-mono text-foreground">
+                  {formatCurrency(initialBalance ?? 0)}
+                </p>
+              </div>
             </div>
             <Dialog open={open} onOpenChange={handleOpenChange}>
               <DialogTrigger asChild>
                 <button
-                  className="p-1 rounded-md hover:bg-secondary text-muted-foreground hover:text-foreground"
+                  className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
                   title="Edit initial balance"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
+                  <Pencil className="w-4 h-4" />
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[380px]">
@@ -113,27 +133,19 @@ const BalanceCard = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <p className="text-lg font-semibold font-mono text-foreground">
-            {formatCurrency(initialBalance ?? 0)}
-          </p>
         </div>
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center gap-1.5 text-expense text-xs mb-1">
-            <TrendingDown className="w-3.5 h-3.5" />
-            <span>Total Spent</span>
+        <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 p-4 shadow-sm col-span-2">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-expense/10 text-expense">
+              <TrendingDown className="h-4 w-4" />
+            </span>
+            <div className="leading-none">
+              <p className="text-[11px] uppercase tracking-wide">Total Spent</p>
+              <p className="text-base font-semibold font-mono text-expense">
+                {formatCurrency(totalExpenses)}
+              </p>
+            </div>
           </div>
-          <p className="text-lg font-semibold font-mono text-expense">
-            {formatCurrency(totalExpenses)}
-          </p>
-        </div>
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center gap-1.5 text-income text-xs mb-1">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Total Income</span>
-          </div>
-          <p className="text-lg font-semibold font-mono text-income">
-            {formatCurrency(totalIncome)}
-          </p>
         </div>
       </div>
     </div>
