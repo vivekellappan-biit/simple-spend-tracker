@@ -10,6 +10,7 @@ export interface Expense {
   category: string;
   date: string;
   created_at: string;
+  recurring_expense_id?: string | null;
 }
 
 export interface RecurringExpense {
@@ -160,6 +161,7 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
         amount: Number(item.amount),
         category: item.category,
         date: dueDateString,
+        recurring_expense_id: item.id,
       }).select().single();
 
       if (!error && data) {
@@ -450,11 +452,48 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
             : item
         )
       );
+      if (data.last_added_date) {
+        await supabase
+          .from('expenses')
+          .update({
+            description: data.description,
+            amount: data.amount,
+            category: data.category,
+          })
+          .eq('user_id', user.id)
+          .eq('recurring_expense_id', id)
+          .eq('date', data.last_added_date);
+        setExpenses(prev =>
+          prev.map(exp =>
+            exp.recurring_expense_id === id && exp.date === data.last_added_date
+              ? {
+                  ...exp,
+                  description: data.description,
+                  amount: Number(data.amount),
+                  category: data.category,
+                }
+              : exp
+          )
+        );
+      }
     }
   }, [user, toast]);
 
   const deleteRecurringExpense = useCallback(async (id: string) => {
     if (!user) return;
+
+    const target = recurringExpenses.find(item => item.id === id);
+    if (target?.last_added_date) {
+      await supabase
+        .from('expenses')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('recurring_expense_id', id)
+        .eq('date', target.last_added_date);
+      setExpenses(prev =>
+        prev.filter(exp => !(exp.recurring_expense_id === id && exp.date === target.last_added_date))
+      );
+    }
 
     const { error } = await supabase.from('recurring_expenses').delete().eq('id', id);
     if (error) {
@@ -462,7 +501,7 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setRecurringExpenses(prev => prev.filter(item => item.id !== id));
-  }, [user, toast]);
+  }, [user, toast, recurringExpenses]);
 
   const addCategory = useCallback(async (name: string) => {
     if (!user) return;
