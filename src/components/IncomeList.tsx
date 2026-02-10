@@ -1,31 +1,124 @@
+import { useState } from 'react';
 import { useExpenses, Income } from '@/context/ExpenseContext';
-import { Trash2, ArrowUpRight } from 'lucide-react';
+import { Trash2, ArrowUpRight, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-const IncomeItem = ({ income, onDelete }: { income: Income; onDelete: (id: string) => void }) => (
-  <div className="flex items-center gap-3 py-3 group">
-    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-      <ArrowUpRight className="w-5 h-5 text-income" />
+const IncomeItem = ({
+  income,
+  onDelete,
+  onUpdate,
+}: {
+  income: Income;
+  onDelete: (id: string) => void;
+  onUpdate: (id: string, updates: Pick<Income, 'description' | 'amount' | 'date'>) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [description, setDescription] = useState(income.description);
+  const [amount, setAmount] = useState(income.amount.toString());
+  const [date, setDate] = useState(income.date);
+
+  const resetForm = () => {
+    setDescription(income.description);
+    setAmount(income.amount.toString());
+    setDate(income.date);
+  };
+
+  const handleSave = () => {
+    const value = parseFloat(amount);
+    if (!description.trim() || isNaN(value) || value <= 0 || !date) return;
+
+    onUpdate(income.id, {
+      description: description.trim(),
+      amount: value,
+      date,
+    });
+    setOpen(false);
+  };
+
+  return (
+    <div className="flex items-center gap-3 py-3 group">
+      <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+        <ArrowUpRight className="w-5 h-5 text-income" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{income.description}</p>
+        <p className="text-xs text-muted-foreground">{format(new Date(income.date), 'MMM d')}</p>
+      </div>
+      <p className="text-sm font-semibold font-mono text-income shrink-0">
+        +₹{income.amount.toFixed(2)}
+      </p>
+      <div className="flex items-center gap-1">
+        <Dialog open={open} onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (nextOpen) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <button
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+              title="Edit income"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Edit Income</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                placeholder="Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="h-11 bg-background"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono text-sm">₹</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="pl-7 h-11 font-mono bg-background"
+                  />
+                </div>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="h-11 bg-background"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={handleSave}>
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <button
+          onClick={() => onDelete(income.id)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
+          title="Delete income"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium text-foreground truncate">{income.description}</p>
-      <p className="text-xs text-muted-foreground">{format(new Date(income.date), 'MMM d')}</p>
-    </div>
-    <p className="text-sm font-semibold font-mono text-income shrink-0">
-      +₹{income.amount.toFixed(2)}
-    </p>
-    <button
-      onClick={() => onDelete(income.id)}
-      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
-      title="Delete income"
-    >
-      <Trash2 className="w-4 h-4" />
-    </button>
-  </div>
-);
+  );
+};
 
 const IncomeList = () => {
-  const { incomes, deleteIncome } = useExpenses();
+  const { incomes, deleteIncome, updateIncome } = useExpenses();
 
   if (incomes.length === 0) {
     return (
@@ -41,7 +134,7 @@ const IncomeList = () => {
       <h3 className="font-semibold text-foreground text-sm mb-2">Recent Income</h3>
       <div className="divide-y divide-border">
         {incomes.map(income => (
-          <IncomeItem key={income.id} income={income} onDelete={deleteIncome} />
+          <IncomeItem key={income.id} income={income} onDelete={deleteIncome} onUpdate={updateIncome} />
         ))}
       </div>
     </div>

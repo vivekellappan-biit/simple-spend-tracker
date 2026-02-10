@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useExpenses } from '@/context/ExpenseContext';
-import { TrendingDown, Wallet, ArrowDownRight, Pencil, TrendingUp } from 'lucide-react';
+import { TrendingDown, Wallet, ArrowDownRight, Pencil, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,9 +10,16 @@ const BalanceCard = () => {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
+  const [showBalance, setShowBalance] = useState(true);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+
+  const { settings, updateSettings } = useExpenses();
+
+  useEffect(() => {
+    if (settings) setShowBalance(settings.show_balance);
+  }, [settings]);
 
   const spentPercentage = initialBalance ? Math.min((totalExpenses / initialBalance) * 100, 100) : 0;
 
@@ -38,12 +45,25 @@ const BalanceCard = () => {
     <div className="space-y-3">
       {/* Main Balance */}
       <div className="bg-card rounded-2xl p-6 border border-border">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-          <Wallet className="w-4 h-4" />
-          <span>Current Balance</span>
+        <div className="flex items-center justify-between gap-2 text-muted-foreground text-sm mb-1">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4" />
+            <span>Current Balance</span>
+          </div>
+          <button
+            className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              const next = !showBalance;
+              setShowBalance(next);
+              updateSettings({ show_balance: next });
+            }}
+            title={showBalance ? 'Hide balance' : 'Show balance'}
+          >
+            {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
         </div>
         <p className={`text-4xl font-bold font-mono tracking-tight ${currentBalance < 0 ? 'text-expense' : 'text-foreground'}`}>
-          {formatCurrency(currentBalance)}
+          {showBalance ? formatCurrency(currentBalance) : '••••••'}
         </p>
         {/* Progress bar */}
         <div className="mt-4 space-y-1.5">
@@ -64,8 +84,8 @@ const BalanceCard = () => {
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 p-4 shadow-sm">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-income/10 text-income">
-              <TrendingUp className="h-4 w-4" />
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-income/10 text-income">
+              <TrendingUp className="h-3 w-3" />
             </span>
             <div className="leading-none">
               <p className="text-[11px] uppercase tracking-wide">Total Income</p>
@@ -76,10 +96,10 @@ const BalanceCard = () => {
           </div>
         </div>
         <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <ArrowDownRight className="h-4 w-4" />
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <ArrowDownRight className="h-3 w-3" />
               </span>
               <div className="leading-none">
                 <p className="text-[11px] uppercase tracking-wide">Initial</p>
@@ -91,10 +111,10 @@ const BalanceCard = () => {
             <Dialog open={open} onOpenChange={handleOpenChange}>
               <DialogTrigger asChild>
                 <button
-                  className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+                  className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center"
                   title="Edit initial balance"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="w-3 h-3" />
                 </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[380px]">
@@ -136,8 +156,8 @@ const BalanceCard = () => {
         </div>
         <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 p-4 shadow-sm col-span-2">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-expense/10 text-expense">
-              <TrendingDown className="h-4 w-4" />
+            <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-expense/10 text-expense">
+              <TrendingDown className="h-3 w-3" />
             </span>
             <div className="leading-none">
               <p className="text-[11px] uppercase tracking-wide">Total Spent</p>

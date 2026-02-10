@@ -1,16 +1,20 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useExpenses } from '@/context/ExpenseContext';
-import { subMonths, startOfMonth, format } from 'date-fns';
+import ExpenseList from '@/components/ExpenseList';
+import { subMonths, startOfMonth, format, subDays, startOfDay, subYears, startOfYear } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, BarChart, Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 
 const MONTHS = 6;
+const DAYS = 14;
+const YEARS = 5;
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
 
 const InsightsAnalytics = () => {
-  const { expenses, incomes, categories } = useExpenses();
+  const { expenses, incomes } = useExpenses();
+  const [cashflowView, setCashflowView] = useState<'monthly' | 'daily' | 'yearly'>('monthly');
 
   const monthlyData = useMemo(() => {
     const now = new Date();
@@ -41,6 +45,67 @@ const InsightsAnalytics = () => {
     });
 
     return months;
+  }, [expenses, incomes]);
+
+  const dailyData = useMemo(() => {
+    const today = startOfDay(new Date());
+    const days = Array.from({ length: DAYS }, (_, index) => {
+      const dayDate = subDays(today, DAYS - 1 - index);
+      const key = format(dayDate, 'yyyy-MM-dd');
+      return {
+        key,
+        label: format(dayDate, 'MMM d'),
+        income: 0,
+        expense: 0,
+      };
+    });
+
+    const dayIndex = new Map(days.map((d, idx) => [d.key, idx]));
+
+    expenses.forEach(expense => {
+      const dayKey = expense.date;
+      const idx = dayIndex.get(dayKey);
+      if (idx !== undefined) days[idx].expense += expense.amount;
+    });
+
+    incomes.forEach(income => {
+      const dayKey = income.date;
+      const idx = dayIndex.get(dayKey);
+      if (idx !== undefined) days[idx].income += income.amount;
+    });
+
+    return days;
+  }, [expenses, incomes]);
+
+  const yearlyData = useMemo(() => {
+    const now = new Date();
+    const base = startOfYear(now);
+    const years = Array.from({ length: YEARS }, (_, index) => {
+      const yearDate = subYears(base, YEARS - 1 - index);
+      const key = format(yearDate, 'yyyy');
+      return {
+        key,
+        label: format(yearDate, 'yyyy'),
+        income: 0,
+        expense: 0,
+      };
+    });
+
+    const yearIndex = new Map(years.map((y, idx) => [y.key, idx]));
+
+    expenses.forEach(expense => {
+      const yearKey = format(new Date(expense.date), 'yyyy');
+      const idx = yearIndex.get(yearKey);
+      if (idx !== undefined) years[idx].expense += expense.amount;
+    });
+
+    incomes.forEach(income => {
+      const yearKey = format(new Date(income.date), 'yyyy');
+      const idx = yearIndex.get(yearKey);
+      if (idx !== undefined) years[idx].income += income.amount;
+    });
+
+    return years;
   }, [expenses, incomes]);
 
   const monthlySummary = useMemo(() => {
@@ -78,8 +143,40 @@ const InsightsAnalytics = () => {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3">
+
         <div className="bg-card rounded-2xl border border-border p-4">
-          <h4 className="text-sm font-semibold text-foreground mb-2">Monthly Cashflow</h4>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-semibold text-foreground">
+              {cashflowView === 'monthly'
+                ? 'Monthly Cashflow'
+                : cashflowView === 'daily'
+                  ? 'Daily Cashflow (Last 14 Days)'
+                  : 'Yearly Cashflow (Last 5 Years)'}
+            </h4>
+            <div className="flex items-center gap-1 rounded-full border border-border bg-background p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setCashflowView('monthly')}
+                className={`px-2.5 py-1 rounded-full ${cashflowView === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setCashflowView('daily')}
+                className={`px-2.5 py-1 rounded-full ${cashflowView === 'daily' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+              >
+                Daily
+              </button>
+              <button
+                type="button"
+                onClick={() => setCashflowView('yearly')}
+                className={`px-2.5 py-1 rounded-full ${cashflowView === 'yearly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
           <ChartContainer
             className="h-56 w-full"
             config={{
@@ -87,16 +184,42 @@ const InsightsAnalytics = () => {
               expense: { label: 'Expense', color: 'hsl(var(--expense))' },
             }}
           >
-            <BarChart data={monthlyData} barGap={8}>
+            <LineChart
+              data={
+                cashflowView === 'monthly'
+                  ? monthlyData
+                  : cashflowView === 'daily'
+                    ? dailyData
+                    : yearlyData
+              }
+            >
               <CartesianGrid vertical={false} />
               <XAxis dataKey="label" axisLine={false} tickLine={false} />
-              <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${Math.round(value / 1000)}k`} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value) => (value >= 1000 ? `${Math.round(value / 1000)}k` : `${Math.round(value)}`)}
+              />
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="income" radius={[6, 6, 0, 0]} fill="var(--color-income)" />
-              <Bar dataKey="expense" radius={[6, 6, 0, 0]} fill="var(--color-expense)" />
-            </BarChart>
+              <Line
+                type="monotone"
+                dataKey="income"
+                stroke="var(--color-income)"
+                strokeWidth={2}
+                dot={{ r: cashflowView === 'monthly' ? 3 : cashflowView === 'daily' ? 2 : 3 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="expense"
+                stroke="var(--color-expense)"
+                strokeWidth={2}
+                dot={{ r: cashflowView === 'monthly' ? 3 : cashflowView === 'daily' ? 2 : 3 }}
+              />
+            </LineChart>
           </ChartContainer>
         </div>
+
+        <ExpenseList />
 
         <div className="bg-card rounded-2xl border border-border p-4">
           <h4 className="text-sm font-semibold text-foreground mb-2">Monthly Summary</h4>
@@ -138,9 +261,9 @@ const InsightsAnalytics = () => {
               Add expenses to see category insights.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_160px] sm:items-center">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_200px] lg:items-center">
               <ChartContainer
-                className="h-56 w-full"
+                className="h-56 w-full min-w-0"
                 config={Object.fromEntries(
                   categoryData.map((item, index) => [
                     item.name,
@@ -167,7 +290,7 @@ const InsightsAnalytics = () => {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              <div className="space-y-2 text-xs">
+              <div className="max-h-52 w-full overflow-auto pr-1 text-xs min-w-0">
                 {categoryData.map((entry, index) => (
                   <div key={entry.name} className="flex items-center gap-2">
                     <span

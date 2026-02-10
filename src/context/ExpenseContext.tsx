@@ -41,6 +41,12 @@ export interface Income {
   created_at: string;
 }
 
+export interface UserSettings {
+  show_balance: boolean;
+  theme_mode: 'light' | 'dark' | 'system';
+  primary_color: 'emerald' | 'blue' | 'indigo' | 'violet' | 'rose' | 'amber' | 'lime' | 'teal' | 'cyan' | 'slate';
+}
+
 const DEFAULT_CATEGORIES = [
   'Food & Dining',
   'Transportation',
@@ -58,18 +64,21 @@ interface ExpenseContextType {
   incomes: Income[];
   recurringExpenses: RecurringExpense[];
   categories: ExpenseCategory[];
+  settings: UserSettings | null;
+  updateSettings: (updates: Partial<UserSettings>) => void;
   setInitialBalance: (amount: number) => void;
   addExpense: (expense: Omit<Expense, 'id' | 'created_at'>) => void;
   updateExpense: (id: string, updates: Pick<Expense, 'description' | 'amount' | 'category' | 'date'>) => void;
   deleteExpense: (id: string) => void;
   addIncome: (income: Omit<Income, 'id' | 'created_at'>) => void;
+  updateIncome: (id: string, updates: Pick<Income, 'description' | 'amount' | 'date'>) => void;
   deleteIncome: (id: string) => void;
   addRecurringExpense: (expense: Omit<RecurringExpense, 'id' | 'created_at' | 'last_added_date'>) => void;
   updateRecurringExpense: (id: string, updates: Partial<Omit<RecurringExpense, 'id' | 'created_at'>>) => void;
   deleteRecurringExpense: (id: string) => void;
   addCategory: (name: string) => void;
   updateCategory: (id: string, name: string, previousName: string) => void;
-  deleteCategory: (id: string) => void;
+  deleteCategory: (id: string, reassignTo?: string) => void;
   currentBalance: number;
   totalExpenses: number;
   totalIncome: number;
@@ -86,6 +95,7 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
@@ -176,18 +186,20 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       setIncomes([]);
       setRecurringExpenses([]);
       setCategories([]);
+      setSettings(null);
       setLoading(false);
       return;
     }
 
     const fetchData = async () => {
       setLoading(true);
-      const [balanceRes, expensesRes, incomesRes, recurringRes, categoriesRes] = await Promise.all([
+      const [balanceRes, expensesRes, incomesRes, recurringRes, categoriesRes, settingsRes] = await Promise.all([
         supabase.from('balances').select('initial_balance').eq('user_id', user.id).maybeSingle(),
         supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('incomes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('recurring_expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('expense_categories').select('*').eq('user_id', user.id).order('name', { ascending: true }),
+        supabase.from('user_settings').select('show_balance, theme_mode, primary_color').eq('user_id', user.id).maybeSingle(),
       ]);
 
       if (balanceRes.data) {
@@ -239,6 +251,29 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
             name,
             created_at: new Date().toISOString(),
           })));
+        }
+      }
+
+      if (settingsRes.data) {
+        setSettings({
+          show_balance: settingsRes.data.show_balance,
+          theme_mode: (settingsRes.data.theme_mode as UserSettings['theme_mode']) || 'system',
+          primary_color: (settingsRes.data.primary_color as UserSettings['primary_color']) || 'emerald',
+        });
+      } else {
+        const { data: insertedSettings } = await supabase
+          .from('user_settings')
+          .insert({ user_id: user.id, show_balance: true, theme_mode: 'system', primary_color: 'emerald' })
+          .select('show_balance, theme_mode, primary_color')
+          .single();
+        if (insertedSettings) {
+          setSettings({
+            show_balance: insertedSettings.show_balance,
+            theme_mode: insertedSettings.theme_mode as UserSettings['theme_mode'],
+            primary_color: insertedSettings.primary_color as UserSettings['primary_color'],
+          });
+        } else {
+          setSettings({ show_balance: true, theme_mode: 'system', primary_color: 'emerald' });
         }
       }
       setLoading(false);
@@ -299,6 +334,33 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
 
     if (data) {
       setIncomes(prev => [{ ...data, amount: Number(data.amount) }, ...prev]);
+    }
+  }, [user, toast]);
+
+  const updateIncome = useCallback(async (id: string, updates: Pick<Income, 'description' | 'amount' | 'date'>) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('incomes')
+      .update({
+        description: updates.description,
+        amount: updates.amount,
+        date: updates.date,
+      })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to update income', variant: 'destructive' });
+      return;
+    }
+
+    if (data) {
+      setIncomes(prev =>
+        prev.map(income => (income.id === id ? { ...data, amount: Number(data.amount) } : income))
+      );
     }
   }, [user, toast]);
 
@@ -458,8 +520,24 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, toast]);
 
-  const deleteCategory = useCallback(async (id: string) => {
+  const deleteCategory = useCallback(async (id: string, reassignTo?: string) => {
     if (!user) return;
+
+    const category = categories.find(cat => cat.id === id)?.name;
+    if (reassignTo && category) {
+      await supabase
+        .from('expenses')
+        .update({ category: reassignTo })
+        .eq('user_id', user.id)
+        .eq('category', category);
+      await supabase
+        .from('recurring_expenses')
+        .update({ category: reassignTo })
+        .eq('user_id', user.id)
+        .eq('category', category);
+      setExpenses(prev => prev.map(exp => (exp.category === category ? { ...exp, category: reassignTo } : exp)));
+      setRecurringExpenses(prev => prev.map(exp => (exp.category === category ? { ...exp, category: reassignTo } : exp)));
+    }
 
     const { error } = await supabase
       .from('expense_categories')
@@ -472,7 +550,25 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setCategories(prev => prev.filter(cat => cat.id !== id));
-  }, [user, toast]);
+  }, [user, toast, categories]);
+
+  const updateSettings = useCallback(async (updates: Partial<UserSettings>) => {
+    if (!user) return;
+    const next = {
+      show_balance: updates.show_balance ?? settings?.show_balance ?? true,
+      theme_mode: updates.theme_mode ?? settings?.theme_mode ?? 'system',
+      primary_color: updates.primary_color ?? settings?.primary_color ?? 'emerald',
+    };
+    setSettings(next);
+
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert({ user_id: user.id, ...next }, { onConflict: 'user_id' });
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
+    }
+  }, [user, settings, toast]);
 
   const updateExpense = useCallback(async (id: string, updates: Pick<Expense, 'description' | 'amount' | 'category' | 'date'>) => {
     if (!user) return;
@@ -526,11 +622,14 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       incomes,
       recurringExpenses,
       categories,
+      settings,
+      updateSettings,
       setInitialBalance,
       addExpense,
       updateExpense,
       deleteExpense,
       addIncome,
+      updateIncome,
       deleteIncome,
       addRecurringExpense,
       updateRecurringExpense,

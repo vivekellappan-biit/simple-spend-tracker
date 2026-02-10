@@ -1,5 +1,4 @@
 import { useExpenses } from '@/context/ExpenseContext';
-import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 import BalanceCard from '@/components/BalanceCard';
 import InsightsAnalytics from '@/components/InsightsAnalytics';
@@ -10,13 +9,13 @@ import IncomeList from '@/components/IncomeList';
 import RecurringExpenses from '@/components/RecurringExpenses';
 import CategoryManager from '@/components/CategoryManager';
 import BalanceSetup from '@/components/BalanceSetup';
-import { LogOut, Plus } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { initialBalance, loading } = useExpenses();
-  const { signOut } = useAuth();
   const [expenseFormOpen, setExpenseFormOpen] = useState(false);
 
   if (loading) {
@@ -41,15 +40,16 @@ const Dashboard = () => {
               {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
             </span>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
-              <LogOut className="w-4 h-4" />
+            <Button asChild variant="ghost" size="icon" title="Settings">
+              <Link to="/settings">
+                <Settings className="w-4 h-4" />
+              </Link>
             </Button>
           </div>
         </div>
 
         <BalanceCard />
         <InsightsAnalytics />
-        <ExpenseList onAddClick={() => setExpenseFormOpen(true)} />
         <ExpenseForm isOpen={expenseFormOpen} onOpenChange={setExpenseFormOpen} />
         <IncomeForm />
         <RecurringExpenses />

@@ -151,10 +151,17 @@ const ExpenseItem = ({
   );
 };
 
-const ExpenseList = ({ onAddClick }: { onAddClick?: () => void }) => {
+const ExpenseList = ({
+  onAddClick,
+  expenses: overrideExpenses,
+}: {
+  onAddClick?: () => void;
+  expenses?: Expense[];
+}) => {
   const { expenses, deleteExpense, updateExpense, categories } = useExpenses();
+  const list = overrideExpenses ?? expenses;
 
-  if (expenses.length === 0) {
+  if (list.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p className="text-sm">No expenses yet</p>
@@ -162,6 +169,14 @@ const ExpenseList = ({ onAddClick }: { onAddClick?: () => void }) => {
       </div>
     );
   }
+
+  const grouped = list.reduce<Record<string, Expense[]>>((acc, expense) => {
+    const key = expense.date;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(expense);
+    return acc;
+  }, {});
+  const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
@@ -176,16 +191,33 @@ const ExpenseList = ({ onAddClick }: { onAddClick?: () => void }) => {
           </button>
         )}
       </div>
-      <div className="divide-y divide-border">
-        {expenses.map(expense => (
-          <ExpenseItem
-            key={expense.id}
-            expense={expense}
-            onDelete={deleteExpense}
-            onUpdate={updateExpense}
-            categories={categories}
-          />
-        ))}
+      <div className="space-y-4">
+        {sortedDates.map(date => {
+          const dayTotal = grouped[date].reduce((sum, expense) => sum + expense.amount, 0);
+          const dayCount = grouped[date].length;
+          return (
+          <div key={date}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs font-medium text-muted-foreground">
+                {format(new Date(date), 'MMM d, yyyy')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {dayCount} txn · <span className="font-mono text-expense">₹{dayTotal.toFixed(2)}</span>
+              </p>
+            </div>
+            <div className="divide-y divide-border">
+              {grouped[date].map(expense => (
+                <ExpenseItem
+                  key={expense.id}
+                  expense={expense}
+                  onDelete={deleteExpense}
+                  onUpdate={updateExpense}
+                  categories={categories}
+                />
+              ))}
+            </div>
+          </div>
+        )})}
       </div>
     </div>
   );

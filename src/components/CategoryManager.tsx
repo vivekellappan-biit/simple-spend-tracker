@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useExpenses } from '@/context/ExpenseContext';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 
 const CategoryManager = () => {
@@ -83,6 +84,7 @@ const CategoryManager = () => {
               usageCount={usageCounts.get(category.name) ?? 0}
               onUpdate={updateCategory}
               onDelete={deleteCategory}
+              categories={categories}
             />
           ))}
         </div>
@@ -97,15 +99,29 @@ const CategoryRow = ({
   usageCount,
   onUpdate,
   onDelete,
+  categories,
 }: {
   id: string;
   name: string;
   usageCount: number;
   onUpdate: (id: string, nextName: string, previousName: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, reassignTo?: string) => void;
+  categories: { id: string; name: string }[];
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(name);
+  const availableTargets = categories.filter(cat => cat.id !== id);
+  const canReassign = availableTargets.length > 0;
+  const defaultTarget = availableTargets.find(cat => cat.name.toLowerCase() === 'other')?.name
+    || availableTargets[0]?.name
+    || '';
+  const [reassignTo, setReassignTo] = useState(defaultTarget);
+
+  useEffect(() => {
+    if (!reassignTo || !availableTargets.some(cat => cat.name === reassignTo)) {
+      setReassignTo(defaultTarget);
+    }
+  }, [defaultTarget, reassignTo, availableTargets]);
 
   const handleSave = () => {
     if (!value.trim()) return;
@@ -158,9 +174,9 @@ const CategoryRow = ({
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <button
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense disabled:opacity-40"
-            title={usageCount > 0 ? "Can't delete category with linked items" : 'Delete category'}
-            disabled={usageCount > 0}
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
+            title="Delete category"
+            disabled={usageCount > 0 && !canReassign}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -169,12 +185,41 @@ const CategoryRow = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete category?</AlertDialogTitle>
           </AlertDialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This removes the category from your list. Existing expenses will keep their current category text.
-          </p>
+          {usageCount > 0 ? (
+            <div className="space-y-3">
+              {canReassign ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    This category is linked to {usageCount} item{usageCount === 1 ? '' : 's'}. Choose a category to move them to.
+                  </p>
+                  <Select value={reassignTo} onValueChange={setReassignTo}>
+                    <SelectTrigger className="h-11 bg-background">
+                      <SelectValue placeholder="Reassign to" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTargets.map(cat => (
+                        <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Add another category before deleting this one.
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              This removes the category from your list.
+            </p>
+          )}
           <AlertDialogFooter className="gap-2 sm:gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => onDelete(id)}>
+            <AlertDialogAction
+              onClick={() => onDelete(id, usageCount > 0 ? reassignTo : undefined)}
+              disabled={usageCount > 0 && !canReassign}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
