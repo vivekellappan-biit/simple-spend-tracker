@@ -5,7 +5,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
 
 const CategoryManager = () => {
   const {
@@ -18,7 +18,10 @@ const CategoryManager = () => {
   } = useExpenses();
 
   const [open, setOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [name, setName] = useState('');
+  const hasMoreThanFive = categories.length > 5;
+  const visibleCategories = showAll ? categories : categories.slice(0, 5);
 
   const usageCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -76,7 +79,7 @@ const CategoryManager = () => {
         </div>
       ) : (
         <div className="divide-y divide-border">
-          {categories.map(category => (
+          {visibleCategories.map(category => (
             <CategoryRow
               key={category.id}
               id={category.id}
@@ -88,6 +91,26 @@ const CategoryManager = () => {
             />
           ))}
         </div>
+      )}
+
+      {hasMoreThanFive && (
+        <button
+          type="button"
+          onClick={() => setShowAll(prev => !prev)}
+          className="w-full h-9 px-3 rounded-lg border border-border bg-background/70 hover:bg-secondary transition-colors text-xs text-muted-foreground flex items-center justify-between"
+          aria-expanded={showAll}
+          aria-label={showAll ? 'Show fewer categories' : 'Show all categories'}
+        >
+          <span>
+            {showAll
+              ? `Showing all ${categories.length} categories`
+              : `Showing 5 of ${categories.length} categories`}
+          </span>
+          <span className="inline-flex items-center gap-1 font-medium text-foreground">
+            {showAll ? 'Show less' : `View ${categories.length - 5} more`}
+            {showAll ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </span>
+        </button>
       )}
     </div>
   );
