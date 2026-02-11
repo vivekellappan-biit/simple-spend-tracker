@@ -23,6 +23,7 @@ const capitalizeFirstLetter = (value: string) => {
   if (!value) return value;
   return value.charAt(0).toUpperCase() + value.slice(1);
 };
+const MAX_VISIBLE_EXPENSES = 5;
 
 const ExpenseItem = ({
   expense,
@@ -182,7 +183,9 @@ const ExpenseList = ({
   expenses?: Expense[];
 }) => {
   const { expenses, deleteExpense, updateExpense, categories } = useExpenses();
+  const [showAll, setShowAll] = useState(false);
   const list = overrideExpenses ?? expenses;
+  const visibleList = showAll ? list : list.slice(0, MAX_VISIBLE_EXPENSES);
 
   if (list.length === 0) {
     return (
@@ -193,7 +196,7 @@ const ExpenseList = ({
     );
   }
 
-  const grouped = list.reduce<Record<string, Expense[]>>((acc, expense) => {
+  const grouped = visibleList.reduce<Record<string, Expense[]>>((acc, expense) => {
     const key = expense.date;
     if (!acc[key]) acc[key] = [];
     acc[key].push(expense);
@@ -245,6 +248,15 @@ const ExpenseList = ({
           </div>
         )})}
       </div>
+      {list.length > MAX_VISIBLE_EXPENSES && (
+        <button
+          type="button"
+          onClick={() => setShowAll(prev => !prev)}
+          className="mt-3 w-full h-9 px-3 rounded-lg border border-border bg-background/70 hover:bg-secondary transition-colors text-xs text-muted-foreground"
+        >
+          {showAll ? 'Show less' : `View ${list.length - MAX_VISIBLE_EXPENSES} more expenses`}
+        </button>
+      )}
     </div>
   );
 };

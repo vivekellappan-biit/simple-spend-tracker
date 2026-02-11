@@ -11,6 +11,12 @@ interface PatternResponse {
   actions: string[];
 }
 
+interface LeakResponse {
+  headline: string;
+  leaks: string[];
+  fixes: string[];
+}
+
 const RECENT_MONTHS = 6;
 
 const formatMonthLabel = (date: Date) =>
@@ -20,7 +26,9 @@ const AISpendingPattern = () => {
   const { expenses, incomes, lendBorrowEntries } = useExpenses();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [leakLoading, setLeakLoading] = useState(false);
   const [result, setResult] = useState<PatternResponse | null>(null);
+  const [leakResult, setLeakResult] = useState<LeakResponse | null>(null);
 
   const snapshot = useMemo(() => {
     const now = new Date();
@@ -98,6 +106,17 @@ const AISpendingPattern = () => {
     };
   };
 
+  const parseLeakResponse = (rawText: string): LeakResponse => {
+    const parsed = JSON.parse(rawText) as Partial<LeakResponse>;
+    return {
+      headline: typeof parsed.headline === 'string'
+        ? parsed.headline
+        : 'You have a few repeatable spending leaks that can be fixed quickly.',
+      leaks: Array.isArray(parsed.leaks) ? parsed.leaks.slice(0, 7).map(String) : [],
+      fixes: Array.isArray(parsed.fixes) ? parsed.fixes.slice(0, 7).map(String) : [],
+    };
+  };
+
   const analyzePattern = async () => {
     if (expenses.length === 0) {
       toast({ title: 'No data yet', description: 'Add a few expenses first to analyze spending patterns.' });
@@ -157,6 +176,102 @@ const AISpendingPattern = () => {
     }
   };
 
+  const analyzeTransactionLeaks = async () => {
+    if (expenses.length === 0) {
+      toast({ title: 'No transactions yet', description: 'Add transactions first to detect spending leaks.' });
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      toast({
+        title: 'Gemini key missing',
+        description: 'Add VITE_GEMINI_API_KEY in .env and reload the app.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLeakLoading(true);
+    try {
+      const fullTransactionPayload = {
+        expenses: expenses.map((expense) => ({
+          date: expense.date,
+          description: expense.description,
+          category: expense.category,
+          amount: expense.amount,
+        })),
+        incomes: incomes.map((income) => ({
+          date: income.date,
+          description: income.description,
+          amount: income.amount,
+        })),
+        lendBorrow: lendBorrowEntries.map((entry) => ({
+          date: entry.date,
+          type: entry.type,
+          person: entry.person_name,
+          amount: entry.amount,
+          status: entry.status,
+        })),
+      };
+
+      const prompt = `You are a strict personal finance leak detector.
+Analyze ALL transactions in the JSON and identify money leaks.
+Return strict JSON only in this shape:
+{
+  "headline": "short diagnosis",
+  "leaks": ["specific leak 1", "specific leak 2"],
+  "fixes": ["actionable fix 1", "actionable fix 2"]
+}
+Rules:
+- Use concrete patterns visible in transaction history.
+- Keep each bullet under 18 words.
+- Avoid generic advice.
+- Prioritize recurring and avoidable leak patterns.
+- Include at most 7 leaks and 7 fixes.
+
+Transactions:
+${JSON.stringify(fullTransactionPayload)}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json',
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to detect transaction leaks');
+      }
+
+      const data = await response.json();
+      const outputText = data?.candidates?.[0]?.content?.parts
+        ?.map((part: { text?: string }) => part.text ?? '')
+        .join('')
+        .trim();
+
+      if (!outputText) {
+        throw new Error('Gemini returned an empty response');
+      }
+
+      setLeakResult(parseLeakResponse(outputText));
+    } catch (error) {
+      toast({
+        title: 'Leak analysis failed',
+        description: error instanceof Error ? error.message : 'Try again in a moment.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLeakLoading(false);
+    }
+  };
+
   return (
     <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
@@ -167,10 +282,20 @@ const AISpendingPattern = () => {
           </h3>
           <p className="text-xs text-muted-foreground">Analyze the last {RECENT_MONTHS} months and get focused recommendations.</p>
         </div>
-        <Button onClick={analyzePattern} disabled={loading} className="h-9 gap-2">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {loading ? 'Analyzing' : 'Analyze'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={analyzePattern} disabled={loading || leakLoading} className="h-9 gap-2">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            {loading ? 'Analyzing' : 'Analyze'}
+          </Button>
+          <Button
+            onClick={analyzeTransactionLeaks}
+            disabled={loading || leakLoading}
+            variant="secondary"
+            className="h-9"
+          >
+            {leakLoading ? 'Finding leaks...' : 'Find Leaks'}
+          </Button>
+        </div>
       </div>
 
       {result ? (
@@ -186,6 +311,14 @@ const AISpendingPattern = () => {
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-background/60 p-3 text-xs text-muted-foreground">
           Run AI analysis to discover your spending behavior and next best actions.
+        </div>
+      )}
+
+      {leakResult && (
+        <div className="space-y-3 rounded-xl border border-border bg-background p-3">
+          <p className="text-sm font-medium text-foreground">{leakResult.headline}</p>
+          <Section title="Leak Points" items={leakResult.leaks} emptyLabel="No clear money leaks detected." />
+          <Section title="Leak Fixes" items={leakResult.fixes} emptyLabel="No fix recommendations generated." />
         </div>
       )}
     </div>

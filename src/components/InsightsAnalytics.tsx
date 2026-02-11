@@ -3,7 +3,7 @@ import { useExpenses } from '@/context/ExpenseContext';
 import ExpenseList from '@/components/ExpenseList';
 import { subMonths, startOfMonth, format, subDays, startOfDay, subYears, startOfYear } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, LineChart, Line, BarChart, Bar } from 'recharts';
 import { CalendarRange, LineChart as LineChartIcon, PieChart as PieChartIcon } from 'lucide-react';
 
 const MONTHS = 6;
@@ -110,19 +110,24 @@ const InsightsAnalytics = () => {
   }, [expenses, incomes]);
 
   const monthlySummary = useMemo(() => {
-    return monthlyData.map((month, index) => {
+    return monthlyData.map((month) => {
       const net = month.income - month.expense;
-      const previous = monthlyData[index - 1];
-      const change = previous ? month.expense - previous.expense : 0;
-      const changePct = previous && previous.expense > 0 ? (change / previous.expense) * 100 : null;
       return {
         ...month,
         net,
-        change,
-        changePct,
       };
     });
   }, [monthlyData]);
+
+  const monthlySummaryChartData = useMemo(() => {
+    const activeMonths = monthlySummary.filter(
+      (month) => month.income > 0 || month.expense > 0 || month.net !== 0,
+    );
+
+    if (activeMonths.length >= 2) return activeMonths;
+    if (monthlySummary.length >= 2) return monthlySummary.slice(-2);
+    return monthlySummary;
+  }, [monthlySummary]);
 
   const categoryData = useMemo(() => {
     const totals = new Map<string, number>();
@@ -228,34 +233,30 @@ const InsightsAnalytics = () => {
             <CalendarRange className="h-4 w-4 text-primary" />
             Monthly Summary
           </h4>
-          <div className="space-y-2">
-            {monthlySummary.map((month, index) => {
-              const changeLabel =
-                month.changePct === null
-                  ? "—"
-                  : `${month.changePct >= 0 ? "+" : ""}${month.changePct.toFixed(0)}%`;
-              return (
-                <div
-                  key={month.key}
-                  className="grid grid-cols-[80px_1fr_1fr_1fr] items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs"
-                >
-                  <span className="font-medium text-foreground">{month.label}</span>
-                  <span className="text-income font-mono">{formatCurrency(month.income)}</span>
-                  <span className="text-expense font-mono">{formatCurrency(month.expense)}</span>
-                  <div className="flex items-center justify-end gap-2">
-                    <span className={`font-mono ${month.net >= 0 ? "text-income" : "text-expense"}`}>
-                      {formatCurrency(month.net)}
-                    </span>
-                    <span className={`font-mono ${month.change >= 0 ? "text-expense" : "text-income"}`}>
-                      {changeLabel}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ChartContainer
+            className="h-64 w-full"
+            config={{
+              income: { label: 'Income', color: 'hsl(var(--income))' },
+              expense: { label: 'Spending', color: 'hsl(var(--expense))' },
+              net: { label: 'Net', color: 'hsl(var(--primary))' },
+            }}
+          >
+            <BarChart data={monthlySummaryChartData}>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="label" axisLine={false} tickLine={false} />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value) => (value >= 1000 || value <= -1000 ? `${Math.round(value / 1000)}k` : `${Math.round(value)}`)}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="income" fill="var(--color-income)" radius={[4, 4, 0, 0]} minPointSize={4} />
+              <Bar dataKey="expense" fill="var(--color-expense)" radius={[4, 4, 0, 0]} minPointSize={4} />
+              <Bar dataKey="net" fill="var(--color-net)" radius={[4, 4, 0, 0]} minPointSize={4} />
+            </BarChart>
+          </ChartContainer>
           <p className="text-[11px] text-muted-foreground mt-2">
-            Columns: Income, Spending, Net, and month-over-month spend change.
+            Monthly comparison of income, spending, and net balance.
           </p>
         </div>
 
