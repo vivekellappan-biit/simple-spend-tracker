@@ -6,6 +6,8 @@ import ExpenseForm from '@/components/ExpenseForm';
 import IncomeForm from '@/components/IncomeForm';
 import ExpenseList from '@/components/ExpenseList';
 import IncomeList from '@/components/IncomeList';
+import LendBorrowForm from '@/components/LendBorrowForm';
+import LendBorrowList from '@/components/LendBorrowList';
 import RecurringExpenses from '@/components/RecurringExpenses';
 import CategoryManager from '@/components/CategoryManager';
 import BalanceSetup from '@/components/BalanceSetup';
@@ -55,6 +57,8 @@ const Dashboard = () => {
         <RecurringExpenses />
         <CategoryManager />
         <IncomeList />
+        <LendBorrowForm />
+        <LendBorrowList />
       </div>
       <Button
         className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full shadow-lg"

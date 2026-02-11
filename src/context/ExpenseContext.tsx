@@ -42,6 +42,17 @@ export interface Income {
   created_at: string;
 }
 
+export interface LendBorrowEntry {
+  id: string;
+  type: 'lent' | 'borrowed';
+  person_name: string;
+  amount: number;
+  date: string;
+  note: string | null;
+  status: 'open' | 'settled';
+  created_at: string;
+}
+
 export interface UserSettings {
   show_balance: boolean;
   theme_mode: 'light' | 'dark' | 'system';
@@ -63,6 +74,7 @@ interface ExpenseContextType {
   initialBalance: number | null;
   expenses: Expense[];
   incomes: Income[];
+  lendBorrowEntries: LendBorrowEntry[];
   recurringExpenses: RecurringExpense[];
   categories: ExpenseCategory[];
   settings: UserSettings | null;
@@ -74,6 +86,9 @@ interface ExpenseContextType {
   addIncome: (income: Omit<Income, 'id' | 'created_at'>) => void;
   updateIncome: (id: string, updates: Pick<Income, 'description' | 'amount' | 'date'>) => void;
   deleteIncome: (id: string) => void;
+  addLendBorrowEntry: (entry: Omit<LendBorrowEntry, 'id' | 'created_at'>) => void;
+  updateLendBorrowEntry: (id: string, updates: Pick<LendBorrowEntry, 'type' | 'person_name' | 'amount' | 'date' | 'note' | 'status'>) => void;
+  deleteLendBorrowEntry: (id: string) => void;
   addRecurringExpense: (expense: Omit<RecurringExpense, 'id' | 'created_at' | 'last_added_date'>) => void;
   updateRecurringExpense: (id: string, updates: Partial<Omit<RecurringExpense, 'id' | 'created_at'>>) => void;
   deleteRecurringExpense: (id: string) => void;
@@ -83,6 +98,8 @@ interface ExpenseContextType {
   currentBalance: number;
   totalExpenses: number;
   totalIncome: number;
+  outstandingLent: number;
+  outstandingBorrowed: number;
   loading: boolean;
 }
 
@@ -94,6 +111,7 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
   const [initialBalance, setInitialBalanceState] = useState<number | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
+  const [lendBorrowEntries, setLendBorrowEntries] = useState<LendBorrowEntry[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
@@ -186,6 +204,7 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       setInitialBalanceState(null);
       setExpenses([]);
       setIncomes([]);
+      setLendBorrowEntries([]);
       setRecurringExpenses([]);
       setCategories([]);
       setSettings(null);
@@ -195,10 +214,11 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
 
     const fetchData = async () => {
       setLoading(true);
-      const [balanceRes, expensesRes, incomesRes, recurringRes, categoriesRes, settingsRes] = await Promise.all([
+      const [balanceRes, expensesRes, incomesRes, lendBorrowRes, recurringRes, categoriesRes, settingsRes] = await Promise.all([
         supabase.from('balances').select('initial_balance').eq('user_id', user.id).maybeSingle(),
         supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('incomes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('lend_borrow_entries').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('recurring_expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('expense_categories').select('*').eq('user_id', user.id).order('name', { ascending: true }),
         supabase.from('user_settings').select('show_balance, theme_mode, primary_color').eq('user_id', user.id).maybeSingle(),
@@ -221,6 +241,15 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
         setIncomes(incomesRes.data.map(i => ({
           ...i,
           amount: Number(i.amount),
+        })));
+      }
+
+      if (lendBorrowRes.data) {
+        setLendBorrowEntries(lendBorrowRes.data.map(item => ({
+          ...item,
+          amount: Number(item.amount),
+          type: item.type as LendBorrowEntry['type'],
+          status: item.status as LendBorrowEntry['status'],
         })));
       }
 
@@ -375,6 +404,77 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     setIncomes(prev => prev.filter(i => i.id !== id));
+  }, [user, toast]);
+
+  const addLendBorrowEntry = useCallback(async (entry: Omit<LendBorrowEntry, 'id' | 'created_at'>) => {
+    if (!user) return;
+
+    const { data, error } = await supabase.from('lend_borrow_entries').insert({
+      user_id: user.id,
+      type: entry.type,
+      person_name: entry.person_name,
+      amount: entry.amount,
+      date: entry.date,
+      note: entry.note,
+      status: entry.status,
+    }).select().single();
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to add lend/borrow entry', variant: 'destructive' });
+      return;
+    }
+
+    if (data) {
+      setLendBorrowEntries(prev => [{ ...data, amount: Number(data.amount), type: data.type as LendBorrowEntry['type'], status: data.status as LendBorrowEntry['status'] }, ...prev]);
+    }
+  }, [user, toast]);
+
+  const updateLendBorrowEntry = useCallback(async (
+    id: string,
+    updates: Pick<LendBorrowEntry, 'type' | 'person_name' | 'amount' | 'date' | 'note' | 'status'>,
+  ) => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('lend_borrow_entries')
+      .update({
+        type: updates.type,
+        person_name: updates.person_name,
+        amount: updates.amount,
+        date: updates.date,
+        note: updates.note,
+        status: updates.status,
+      })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to update lend/borrow entry', variant: 'destructive' });
+      return;
+    }
+
+    if (data) {
+      setLendBorrowEntries(prev =>
+        prev.map(item =>
+          item.id === id
+            ? { ...data, amount: Number(data.amount), type: data.type as LendBorrowEntry['type'], status: data.status as LendBorrowEntry['status'] }
+            : item
+        )
+      );
+    }
+  }, [user, toast]);
+
+  const deleteLendBorrowEntry = useCallback(async (id: string) => {
+    if (!user) return;
+
+    const { error } = await supabase.from('lend_borrow_entries').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: 'Failed to delete lend/borrow entry', variant: 'destructive' });
+      return;
+    }
+    setLendBorrowEntries(prev => prev.filter(item => item.id !== id));
   }, [user, toast]);
 
   const addRecurringExpense = useCallback(async (expense: Omit<RecurringExpense, 'id' | 'created_at' | 'last_added_date'>) => {
@@ -652,6 +752,12 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
 
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalIncome = incomes.reduce((sum, i) => sum + i.amount, 0);
+  const outstandingLent = lendBorrowEntries
+    .filter(item => item.type === 'lent' && item.status === 'open')
+    .reduce((sum, item) => sum + item.amount, 0);
+  const outstandingBorrowed = lendBorrowEntries
+    .filter(item => item.type === 'borrowed' && item.status === 'open')
+    .reduce((sum, item) => sum + item.amount, 0);
   const currentBalance = (initialBalance ?? 0) + totalIncome - totalExpenses;
 
   return (
@@ -659,6 +765,7 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       initialBalance,
       expenses,
       incomes,
+      lendBorrowEntries,
       recurringExpenses,
       categories,
       settings,
@@ -670,6 +777,9 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       addIncome,
       updateIncome,
       deleteIncome,
+      addLendBorrowEntry,
+      updateLendBorrowEntry,
+      deleteLendBorrowEntry,
       addRecurringExpense,
       updateRecurringExpense,
       deleteRecurringExpense,
@@ -679,6 +789,8 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
       currentBalance,
       totalExpenses,
       totalIncome,
+      outstandingLent,
+      outstandingBorrowed,
       loading,
     }}>
       {children}
