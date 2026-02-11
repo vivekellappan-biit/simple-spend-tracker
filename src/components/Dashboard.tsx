@@ -1,6 +1,8 @@
 import { useExpenses } from '@/context/ExpenseContext';
 import { useState } from 'react';
 import BalanceCard from '@/components/BalanceCard';
+import AISpendingPattern from '@/components/AISpendingPattern';
+import ChatEntry from '@/components/ChatEntry';
 import InsightsAnalytics from '@/components/InsightsAnalytics';
 import ExpenseForm from '@/components/ExpenseForm';
 import IncomeForm from '@/components/IncomeForm';
@@ -51,6 +53,8 @@ const Dashboard = () => {
         </div>
 
         <BalanceCard />
+        <ChatEntry />
+        <AISpendingPattern />
         <InsightsAnalytics />
         <ExpenseForm isOpen={expenseFormOpen} onOpenChange={setExpenseFormOpen} />
         <IncomeForm />

@@ -19,6 +19,11 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   'Other': MoreHorizontal,
 };
 
+const capitalizeFirstLetter = (value: string) => {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
 const ExpenseItem = ({
   expense,
   onDelete,
@@ -64,7 +69,7 @@ const ExpenseItem = ({
         <Icon className="w-5 h-5 text-muted-foreground" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{expense.description}</p>
+        <p className="text-sm font-medium text-foreground truncate">{capitalizeFirstLetter(expense.description)}</p>
         <p className="text-xs text-muted-foreground">{expense.category} · {format(new Date(expense.date), 'MMM d')}</p>
       </div>
       <p className="text-sm font-semibold font-mono text-expense shrink-0">

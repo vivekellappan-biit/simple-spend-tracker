@@ -60,6 +60,16 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Environment variables
+
+Create a `.env` file in the project root and add:
+
+```sh
+VITE_GEMINI_API_KEY=your_gemini_api_key
+```
+
+This enables the `AI Spending Pattern` feature in the dashboard.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.

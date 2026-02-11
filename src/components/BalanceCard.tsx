@@ -5,6 +5,45 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+const DAILY_FINANCE_QUOTES = [
+  {
+    quote: 'Save first, spend what remains. Your future self will thank you.',
+    tip: 'Auto-transfer 20% of income to savings the day you get paid.',
+  },
+  {
+    quote: 'Small daily spending is where big monthly leaks hide.',
+    tip: 'Set a daily discretionary cap and track it before bedtime.',
+  },
+  {
+    quote: 'Financial independence is built by consistency, not luck.',
+    tip: 'Review recurring subscriptions monthly and cancel one unused item.',
+  },
+  {
+    quote: 'A budget is freedom with a plan, not restriction.',
+    tip: 'Use the 50/30/20 split and move extra from wants to savings.',
+  },
+  {
+    quote: 'Every rupee has a job; assign it before you spend it.',
+    tip: 'Plan next week expenses every Sunday and set category limits.',
+  },
+  {
+    quote: 'Emergency funds turn stress into options.',
+    tip: 'Build toward 6 months of essential expenses, one month at a time.',
+  },
+  {
+    quote: 'Spend intentionally today to buy freedom tomorrow.',
+    tip: 'Wait 24 hours before non-essential purchases above your set limit.',
+  },
+];
+
+const getDailyFinanceQuote = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const dayOfYear = Math.floor(diff / 86400000);
+  return DAILY_FINANCE_QUOTES[dayOfYear % DAILY_FINANCE_QUOTES.length];
+};
+
 const BalanceCard = () => {
   const { currentBalance, totalExpenses, totalIncome, initialBalance, setInitialBalance } = useExpenses();
   const [open, setOpen] = useState(false);
@@ -22,6 +61,7 @@ const BalanceCard = () => {
   }, [settings]);
 
   const spentPercentage = initialBalance ? Math.min((totalExpenses / initialBalance) * 100, 100) : 0;
+  const dailyQuote = getDailyFinanceQuote();
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -78,6 +118,11 @@ const BalanceCard = () => {
             />
           </div>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-gradient-to-r from-background to-card p-4">
+        <p className="text-sm font-medium text-foreground">"{dailyQuote.quote}"</p>
+        <p className="text-xs text-muted-foreground mt-2">{dailyQuote.tip}</p>
       </div>
 
       {/* Stats row */}
