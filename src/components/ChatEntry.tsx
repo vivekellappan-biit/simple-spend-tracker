@@ -366,7 +366,7 @@ const ChatEntry = () => {
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`text-xs leading-relaxed ${
+            className={`text-sm leading-relaxed ${
               message.role === 'assistant' ? 'text-muted-foreground' : 'text-foreground'
             }`}
           >
@@ -383,7 +383,7 @@ const ChatEntry = () => {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder='Try: "Spent 300 on transportation"'
-          className="h-10 bg-background"
+          className="h-10 bg-background text-sm placeholder:text-xs"
         />
         {speechRecognitionSupported && (
           <Button

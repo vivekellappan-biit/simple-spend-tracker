@@ -161,7 +161,10 @@ const AISpendingPattern = () => {
     <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">AI Spending Pattern</h3>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            AI Spending Pattern
+          </h3>
           <p className="text-xs text-muted-foreground">Analyze the last {RECENT_MONTHS} months and get focused recommendations.</p>
         </div>
         <Button onClick={analyzePattern} disabled={loading} className="h-9 gap-2">

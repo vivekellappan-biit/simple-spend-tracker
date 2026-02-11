@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useExpenses, LendBorrowEntry } from '@/context/ExpenseContext';
-import { ArrowDownLeft, ArrowUpRight, Pencil, Trash2 } from 'lucide-react';
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -203,7 +203,10 @@ const LendBorrowList = () => {
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-foreground text-sm">Lend / Borrow Tracker</h3>
+        <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+          <ArrowLeftRight className="h-4 w-4 text-primary" />
+          Lend / Borrow Tracker
+        </h3>
         <div className="text-xs text-muted-foreground">
           <span className="mr-3">Lent: <span className="font-mono text-warning">₹{outstandingLent.toFixed(2)}</span></span>
           <span>Borrowed: <span className="font-mono text-income">₹{outstandingBorrowed.toFixed(2)}</span></span>

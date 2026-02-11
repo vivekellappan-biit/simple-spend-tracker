@@ -4,6 +4,7 @@ import ExpenseList from '@/components/ExpenseList';
 import { subMonths, startOfMonth, format, subDays, startOfDay, subYears, startOfYear } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
+import { CalendarRange, LineChart as LineChartIcon, PieChart as PieChartIcon } from 'lucide-react';
 
 const MONTHS = 6;
 const DAYS = 14;
@@ -146,7 +147,8 @@ const InsightsAnalytics = () => {
 
         <div className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-sm font-semibold text-foreground">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <LineChartIcon className="h-4 w-4 text-primary" />
               {cashflowView === 'monthly'
                 ? 'Monthly Cashflow'
                 : cashflowView === 'daily'
@@ -222,7 +224,10 @@ const InsightsAnalytics = () => {
         <ExpenseList />
 
         <div className="bg-card rounded-2xl border border-border p-4">
-          <h4 className="text-sm font-semibold text-foreground mb-2">Monthly Summary</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+            <CalendarRange className="h-4 w-4 text-primary" />
+            Monthly Summary
+          </h4>
           <div className="space-y-2">
             {monthlySummary.map((month, index) => {
               const changeLabel =
@@ -255,7 +260,10 @@ const InsightsAnalytics = () => {
         </div>
 
         <div className="bg-card rounded-2xl border border-border p-4">
-          <h4 className="text-sm font-semibold text-foreground mb-2">Spend By Category</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+            <PieChartIcon className="h-4 w-4 text-primary" />
+            Spend By Category
+          </h4>
           {categoryData.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
               Add expenses to see category insights.

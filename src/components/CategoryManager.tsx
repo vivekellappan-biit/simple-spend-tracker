@@ -5,7 +5,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 
 const CategoryManager = () => {
   const {
@@ -40,7 +40,10 @@ const CategoryManager = () => {
   return (
     <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-foreground text-sm">Categories</h3>
+        <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+          <Tag className="h-4 w-4 text-primary" />
+          Categories
+        </h3>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm" variant="secondary" className="h-8 gap-2">

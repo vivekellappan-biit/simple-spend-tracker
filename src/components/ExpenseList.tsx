@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useExpenses, Expense } from '@/context/ExpenseContext';
-import { Trash2, ShoppingBag, Car, Utensils, Gamepad2, Zap, Heart, GraduationCap, MoreHorizontal, Pencil } from 'lucide-react';
+import { Trash2, ShoppingBag, Car, Utensils, Gamepad2, Zap, Heart, GraduationCap, MoreHorizontal, Pencil, Receipt } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -204,7 +204,10 @@ const ExpenseList = ({
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-foreground text-sm">Recent Expenses</h3>
+        <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-primary" />
+          Recent Expenses
+        </h3>
         {onAddClick && (
           <button
             onClick={onAddClick}

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Pencil, Trash2, Plus } from 'lucide-react';
+import { Pencil, Trash2, Plus, Repeat } from 'lucide-react';
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
@@ -324,7 +324,10 @@ const RecurringExpenses = () => {
   return (
     <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-foreground text-sm">Recurring Bills</h3>
+        <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+          <Repeat className="h-4 w-4 text-primary" />
+          Recurring Bills
+        </h3>
         <Dialog open={open} onOpenChange={(nextOpen) => {
           setOpen(nextOpen);
           if (nextOpen) resetForm();

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useExpenses, Income } from '@/context/ExpenseContext';
-import { Trash2, ArrowUpRight, Pencil } from 'lucide-react';
+import { Trash2, ArrowUpRight, Pencil, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -149,7 +149,10 @@ const IncomeList = () => {
 
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
-      <h3 className="font-semibold text-foreground text-sm mb-2">Recent Income</h3>
+      <h3 className="font-semibold text-foreground text-sm mb-2 flex items-center gap-2">
+        <TrendingUp className="h-4 w-4 text-income" />
+        Recent Income
+      </h3>
       <div className="divide-y divide-border">
         {incomes.map(income => (
           <IncomeItem key={income.id} income={income} onDelete={deleteIncome} onUpdate={updateIncome} />
