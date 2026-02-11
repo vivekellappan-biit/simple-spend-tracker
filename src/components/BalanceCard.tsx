@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useExpenses } from '@/context/ExpenseContext';
-import { TrendingDown, Wallet, ArrowDownRight, Pencil, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { TrendingDown, Wallet, ArrowDownRight, Pencil, TrendingUp, Eye, EyeOff, Share2, Brain, Target } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const DAILY_FINANCE_QUOTES = [
   {
@@ -44,8 +45,20 @@ const getDailyFinanceQuote = () => {
   return DAILY_FINANCE_QUOTES[dayOfYear % DAILY_FINANCE_QUOTES.length];
 };
 
+const LEARNING_MONTHS = 12;
+const FIRE_WITHDRAWAL_MULTIPLIER = 25;
+const ANNUAL_GROWTH_RATE = 0.10;
+
+const formatYearsToFire = (years: number | null) => {
+  if (years === null) return 'Needs surplus';
+  if (years <= 0) return 'Reached';
+  if (years < 1) return '<1 year';
+  return `${years.toFixed(1)} years`;
+};
+
 const BalanceCard = () => {
-  const { currentBalance, totalExpenses, totalIncome, initialBalance, setInitialBalance } = useExpenses();
+  const { currentBalance, totalExpenses, totalIncome, initialBalance, setInitialBalance, expenses, incomes } = useExpenses();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
@@ -62,6 +75,120 @@ const BalanceCard = () => {
 
   const spentPercentage = initialBalance ? Math.min((totalExpenses / initialBalance) * 100, 100) : 0;
   const dailyQuote = getDailyFinanceQuote();
+  const shareText = `"${dailyQuote.quote}"\n\n${dailyQuote.tip}`;
+  const monthBuckets = new Map<string, { expense: number; income: number }>();
+
+  expenses.forEach((expense) => {
+    const key = expense.date.slice(0, 7);
+    const current = monthBuckets.get(key) ?? { expense: 0, income: 0 };
+    current.expense += expense.amount;
+    monthBuckets.set(key, current);
+  });
+
+  incomes.forEach((income) => {
+    const key = income.date.slice(0, 7);
+    const current = monthBuckets.get(key) ?? { expense: 0, income: 0 };
+    current.income += income.amount;
+    monthBuckets.set(key, current);
+  });
+
+  const recentMonths = Array.from(monthBuckets.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .slice(-LEARNING_MONTHS)
+    .map(([, value]) => value);
+
+  const weightedAverage = (values: number[]) => {
+    if (values.length === 0) return 0;
+    let weightedSum = 0;
+    let totalWeight = 0;
+    values.forEach((value, index) => {
+      const weight = index + 1;
+      weightedSum += value * weight;
+      totalWeight += weight;
+    });
+    return weightedSum / totalWeight;
+  };
+
+  const estimatedMonthlyExpense = weightedAverage(recentMonths.map((month) => month.expense));
+  const estimatedMonthlyIncome = weightedAverage(recentMonths.map((month) => month.income));
+  const fireNumber = estimatedMonthlyExpense * 12 * FIRE_WITHDRAWAL_MULTIPLIER;
+  const monthlySurplus = Math.max(estimatedMonthlyIncome - estimatedMonthlyExpense, 0);
+  const progressToFire = fireNumber > 0 ? Math.min((Math.max(currentBalance, 0) / fireNumber) * 100, 100) : 0;
+
+  const estimateYearsToFire = () => {
+    if (fireNumber <= 0) return null;
+    const principal = Math.max(currentBalance, 0);
+    if (principal >= fireNumber) return 0;
+    if (monthlySurplus <= 0) return null;
+
+    const monthlyRate = ANNUAL_GROWTH_RATE / 12;
+    const numerator = fireNumber * monthlyRate + monthlySurplus;
+    const denominator = principal * monthlyRate + monthlySurplus;
+    if (denominator <= 0 || numerator <= denominator) return null;
+
+    const monthsNeeded = Math.log(numerator / denominator) / Math.log(1 + monthlyRate);
+    if (!Number.isFinite(monthsNeeded) || monthsNeeded < 0) return null;
+    return monthsNeeded / 12;
+  };
+
+  const yearsToFire = estimateYearsToFire();
+  const learningScore = Math.min(95, Math.round((recentMonths.length / LEARNING_MONTHS) * 100));
+
+  const copyQuoteToClipboard = async () => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareText);
+      return;
+    }
+
+    const textArea = document.createElement('textarea');
+    textArea.value = shareText;
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textArea);
+
+    if (!copied) {
+      throw new Error('Copy command failed');
+    }
+  };
+
+  const handleShareQuote = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Daily Finance Quote',
+          text: shareText,
+        });
+        return;
+      }
+
+      await copyQuoteToClipboard();
+      toast({
+        title: 'Quote copied',
+        description: 'You can now paste and share it anywhere.',
+      });
+    } catch (error) {
+      if (
+        (error instanceof DOMException && error.name === 'AbortError') ||
+        (typeof error === 'object' &&
+          error !== null &&
+          'name' in error &&
+          (error as { name?: string }).name === 'AbortError')
+      ) {
+        return;
+      }
+
+      toast({
+        title: 'Share failed',
+        description: 'Could not share the quote. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
@@ -118,10 +245,46 @@ const BalanceCard = () => {
             />
           </div>
         </div>
+
+        <div className="mt-4 rounded-xl border border-border bg-background/60 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              AI FIRE Predictor
+            </p>
+            <span className="text-[11px] text-muted-foreground">
+              Learning: {learningScore}%
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg border border-border bg-card p-2">
+              <p className="text-muted-foreground">FIRE Number</p>
+              <p className="font-semibold font-mono text-foreground">{formatCurrency(fireNumber || 0)}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-2">
+              <p className="text-muted-foreground">Time to FIRE</p>
+              <p className="font-semibold text-foreground flex items-center gap-1">
+                <Target className="h-3 w-3 text-primary" />
+                {formatYearsToFire(yearsToFire)}
+              </p>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Updates automatically from your latest expenses and incomes.
+          </p>
+          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progressToFire}%` }} />
+          </div>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-gradient-to-r from-background to-card p-4">
-        <p className="text-sm font-medium text-foreground">"{dailyQuote.quote}"</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm font-medium text-foreground">"{dailyQuote.quote}"</p>
+          <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleShareQuote} title="Share quote">
+            <Share2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
         <p className="text-xs text-muted-foreground mt-2">{dailyQuote.tip}</p>
       </div>
 
