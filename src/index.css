@@ -59,61 +59,51 @@
   :root[data-theme-color='emerald'] {
     --primary: 160 84% 39%;
     --ring: 160 84% 39%;
-    --income: 160 84% 39%;
   }
 
   :root[data-theme-color='blue'] {
     --primary: 210 90% 50%;
     --ring: 210 90% 50%;
-    --income: 210 90% 50%;
   }
 
   :root[data-theme-color='indigo'] {
     --primary: 234 89% 58%;
     --ring: 234 89% 58%;
-    --income: 234 89% 58%;
   }
 
   :root[data-theme-color='violet'] {
     --primary: 270 80% 56%;
     --ring: 270 80% 56%;
-    --income: 270 80% 56%;
   }
 
   :root[data-theme-color='rose'] {
     --primary: 348 85% 55%;
     --ring: 348 85% 55%;
-    --income: 348 85% 55%;
   }
 
   :root[data-theme-color='amber'] {
     --primary: 38 92% 50%;
     --ring: 38 92% 50%;
-    --income: 38 92% 50%;
   }
 
   :root[data-theme-color='lime'] {
     --primary: 90 80% 43%;
     --ring: 90 80% 43%;
-    --income: 90 80% 43%;
   }
 
   :root[data-theme-color='teal'] {
     --primary: 173 80% 40%;
     --ring: 173 80% 40%;
-    --income: 173 80% 40%;
   }
 
   :root[data-theme-color='cyan'] {
     --primary: 188 90% 42%;
     --ring: 188 90% 42%;
-    --income: 188 90% 42%;
   }
 
   :root[data-theme-color='slate'] {
     --primary: 215 20% 45%;
     --ring: 215 20% 45%;
-    --income: 215 20% 45%;
   }
 
   .dark {
@@ -168,61 +158,51 @@
   .dark[data-theme-color='emerald'] {
     --primary: 160 84% 45%;
     --ring: 160 84% 45%;
-    --income: 160 84% 45%;
   }
 
   .dark[data-theme-color='blue'] {
     --primary: 210 90% 60%;
     --ring: 210 90% 60%;
-    --income: 210 90% 60%;
   }
 
   .dark[data-theme-color='indigo'] {
     --primary: 234 89% 68%;
     --ring: 234 89% 68%;
-    --income: 234 89% 68%;
   }
 
   .dark[data-theme-color='violet'] {
     --primary: 270 80% 68%;
     --ring: 270 80% 68%;
-    --income: 270 80% 68%;
   }
 
   .dark[data-theme-color='rose'] {
     --primary: 348 85% 65%;
     --ring: 348 85% 65%;
-    --income: 348 85% 65%;
   }
 
   .dark[data-theme-color='amber'] {
     --primary: 38 92% 60%;
     --ring: 38 92% 60%;
-    --income: 38 92% 60%;
   }
 
   .dark[data-theme-color='lime'] {
     --primary: 90 80% 55%;
     --ring: 90 80% 55%;
-    --income: 90 80% 55%;
   }
 
   .dark[data-theme-color='teal'] {
     --primary: 173 80% 55%;
     --ring: 173 80% 55%;
-    --income: 173 80% 55%;
   }
 
   .dark[data-theme-color='cyan'] {
     --primary: 188 90% 55%;
     --ring: 188 90% 55%;
-    --income: 188 90% 55%;
   }
 
   .dark[data-theme-color='slate'] {
     --primary: 215 20% 65%;
     --ring: 215 20% 65%;
-    --income: 215 20% 65%;
   }
 }
 
