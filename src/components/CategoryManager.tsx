@@ -166,7 +166,7 @@ const CategoryRow = ({
       }}>
         <DialogTrigger asChild>
           <button
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+            className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
             title="Edit category"
           >
             <Pencil className="w-4 h-4" />
@@ -197,7 +197,7 @@ const CategoryRow = ({
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <button
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
+            className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
             title="Delete category"
             disabled={usageCount > 0 && !canReassign}
           >

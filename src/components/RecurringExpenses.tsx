@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useExpenses, RecurringExpense } from '@/context/ExpenseContext';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -132,7 +133,7 @@ const RecurringItem = ({
         }}>
           <DialogTrigger asChild>
             <button
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
               title="Edit recurring expense"
             >
               <Pencil className="w-4 h-4" />
@@ -242,13 +243,30 @@ const RecurringItem = ({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <button
-          onClick={() => onDelete(item.id)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
-          title="Delete recurring expense"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
+              title="Delete recurring expense"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete recurring expense?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This will permanently remove this recurring entry.
+            </p>
+            <AlertDialogFooter className="gap-2 sm:gap-2">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(item.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

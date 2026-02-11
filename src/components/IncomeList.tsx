@@ -3,6 +3,7 @@ import { useExpenses, Income } from '@/context/ExpenseContext';
 import { Trash2, ArrowUpRight, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -57,7 +58,7 @@ const IncomeItem = ({
         }}>
           <DialogTrigger asChild>
             <button
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
               title="Edit income"
             >
               <Pencil className="w-4 h-4" />
@@ -105,13 +106,30 @@ const IncomeItem = ({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <button
-          onClick={() => onDelete(income.id)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
-          title="Delete income"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
+              title="Delete income"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete income?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This will permanently remove this income entry.
+            </p>
+            <AlertDialogFooter className="gap-2 sm:gap-2">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(income.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

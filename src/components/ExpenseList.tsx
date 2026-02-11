@@ -3,6 +3,7 @@ import { useExpenses, Expense } from '@/context/ExpenseContext';
 import { Trash2, ShoppingBag, Car, Utensils, Gamepad2, Zap, Heart, GraduationCap, MoreHorizontal, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -76,7 +77,7 @@ const ExpenseItem = ({
         }}>
           <DialogTrigger asChild>
             <button
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground"
               title="Edit expense"
             >
               <Pencil className="w-4 h-4" />
@@ -139,13 +140,30 @@ const ExpenseItem = ({
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        <button
-          onClick={() => onDelete(expense.id)}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
-          title="Delete expense"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-expense"
+              title="Delete expense"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete expense?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This will permanently remove this expense entry.
+            </p>
+            <AlertDialogFooter className="gap-2 sm:gap-2">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(expense.id)}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
