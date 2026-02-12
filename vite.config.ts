@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png"],
+      includeAssets: ["favicon.ico", "apple-touch-icon.png", "pwa-192.png", "pwa-512.png", "pwa-512-maskable.png"],
       manifest: {
         name: "Simple Spend Tracker",
         short_name: "Spend Tracker",
@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => ({
             type: "image/png",
           },
           {
-            src: "/pwa-512.png",
+            src: "/pwa-512-maskable.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
