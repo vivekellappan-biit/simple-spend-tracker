@@ -9,6 +9,24 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amount);
+
+const getBalanceImpact = (
+  entryType: LendBorrowEntry['type'],
+  entryAmount: number,
+  entryStatus: LendBorrowEntry['status'],
+) => {
+  if (entryStatus === 'settled') return 0;
+  return entryType === 'lent' ? -entryAmount : entryAmount;
+};
+
+const getOpenEntryImpact = (
+  entryType: LendBorrowEntry['type'],
+  entryAmount: number,
+) => (entryType === 'lent' ? -entryAmount : entryAmount);
 
 const LendBorrowItem = ({
   item,
@@ -22,6 +40,7 @@ const LendBorrowItem = ({
     updates: Pick<LendBorrowEntry, 'type' | 'person_name' | 'amount' | 'date' | 'note' | 'status'>,
   ) => void;
 }) => {
+  const { initialBalance, setInitialBalance } = useExpenses();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<LendBorrowEntry['type']>(item.type);
   const [personName, setPersonName] = useState(item.person_name);
@@ -29,6 +48,7 @@ const LendBorrowItem = ({
   const [date, setDate] = useState(item.date);
   const [note, setNote] = useState(item.note ?? '');
   const [status, setStatus] = useState<LendBorrowEntry['status']>(item.status);
+  const [shouldUpdateCurrentAmount, setShouldUpdateCurrentAmount] = useState(true);
 
   const resetForm = () => {
     setType(item.type);
@@ -37,6 +57,7 @@ const LendBorrowItem = ({
     setDate(item.date);
     setNote(item.note ?? '');
     setStatus(item.status);
+    setShouldUpdateCurrentAmount(true);
   };
 
   const handleSave = () => {
@@ -51,6 +72,23 @@ const LendBorrowItem = ({
       note: note.trim() || null,
       status,
     });
+
+    if (shouldUpdateCurrentAmount) {
+      let delta = 0;
+
+      if (item.status === 'open' && status === 'settled') {
+        delta = type === 'lent' ? value : -value;
+      } else if (item.status === 'settled' && status === 'open') {
+        delta = getOpenEntryImpact(type, value);
+      } else {
+        const previousImpact = getBalanceImpact(item.type, item.amount, item.status);
+        const nextImpact = getBalanceImpact(type, value, status);
+        delta = nextImpact - previousImpact;
+      }
+
+      setInitialBalance((initialBalance ?? 0) + delta);
+    }
+
     setOpen(false);
   };
 
@@ -142,6 +180,21 @@ const LendBorrowItem = ({
                 onChange={(e) => setNote(e.target.value)}
                 className="bg-background min-h-[84px]"
               />
+              <div className="rounded-lg border border-border bg-background/70 px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Update current amount?</p>
+                    <p className="text-xs text-muted-foreground">
+                      Adjust balance based on edited amount, type, and status
+                    </p>
+                  </div>
+                  <Switch
+                    checked={shouldUpdateCurrentAmount}
+                    onCheckedChange={setShouldUpdateCurrentAmount}
+                    aria-label="Update current amount"
+                  />
+                </div>
+              </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
@@ -190,6 +243,8 @@ const LendBorrowList = () => {
     outstandingLent,
     outstandingBorrowed,
   } = useExpenses();
+  const openLentCount = lendBorrowEntries.filter((item) => item.type === 'lent' && item.status === 'open').length;
+  const openBorrowedCount = lendBorrowEntries.filter((item) => item.type === 'borrowed' && item.status === 'open').length;
 
   if (lendBorrowEntries.length === 0) {
     return (
@@ -202,14 +257,27 @@ const LendBorrowList = () => {
 
   return (
     <div className="bg-card rounded-2xl border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
-          <ArrowLeftRight className="h-4 w-4 text-primary" />
-          Lend / Borrow Tracker
-        </h3>
-        <div className="text-xs text-muted-foreground">
-          <span className="mr-3">Lent: <span className="font-mono text-warning">₹{outstandingLent.toFixed(2)}</span></span>
-          <span>Borrowed: <span className="font-mono text-income">₹{outstandingBorrowed.toFixed(2)}</span></span>
+      <div className="mb-3 rounded-xl border border-border bg-gradient-to-r from-background to-card/70 p-3">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+            <ArrowLeftRight className="h-4 w-4 text-primary" />
+            Lend / Borrow Tracker
+          </h3>
+          <span className="text-[11px] rounded-full border border-border bg-background px-2.5 py-1 text-muted-foreground">
+            {lendBorrowEntries.length} records
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-warning/25 bg-warning/5 p-2.5">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Open Lent</p>
+            <p className="text-sm font-mono font-semibold text-warning">{formatCurrency(outstandingLent)}</p>
+            <p className="text-[11px] text-muted-foreground">{openLentCount} open {openLentCount === 1 ? 'entry' : 'entries'}</p>
+          </div>
+          <div className="rounded-lg border border-income/25 bg-income/5 p-2.5">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Open Borrowed</p>
+            <p className="text-sm font-mono font-semibold text-income">{formatCurrency(outstandingBorrowed)}</p>
+            <p className="text-[11px] text-muted-foreground">{openBorrowedCount} open {openBorrowedCount === 1 ? 'entry' : 'entries'}</p>
+          </div>
         </div>
       </div>
       <div className="divide-y divide-border">

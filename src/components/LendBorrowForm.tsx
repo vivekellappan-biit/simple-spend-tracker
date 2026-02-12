@@ -3,17 +3,19 @@ import { useExpenses } from '@/context/ExpenseContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 
 const LendBorrowForm = () => {
-  const { addLendBorrowEntry } = useExpenses();
+  const { addLendBorrowEntry, initialBalance, setInitialBalance } = useExpenses();
   const [isOpen, setIsOpen] = useState(false);
   const [type, setType] = useState<'lent' | 'borrowed'>('lent');
   const [personName, setPersonName] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
+  const [shouldUpdateCurrentAmount, setShouldUpdateCurrentAmount] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,11 +32,17 @@ const LendBorrowForm = () => {
       status: 'open',
     });
 
+    if (shouldUpdateCurrentAmount) {
+      const change = type === 'lent' ? -value : value;
+      setInitialBalance((initialBalance ?? 0) + change);
+    }
+
     setPersonName('');
     setAmount('');
     setDate(new Date().toISOString().split('T')[0]);
     setNote('');
     setType('lent');
+    setShouldUpdateCurrentAmount(false);
     setIsOpen(false);
   };
 
@@ -103,6 +111,22 @@ const LendBorrowForm = () => {
         onChange={(e) => setNote(e.target.value)}
         className="bg-background min-h-[84px]"
       />
+
+      <div className="rounded-lg border border-border bg-background/70 px-3 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Update current amount?</p>
+            <p className="text-xs text-muted-foreground">
+              {type === 'lent' ? 'Subtract from current balance' : 'Add to current balance'}
+            </p>
+          </div>
+          <Switch
+            checked={shouldUpdateCurrentAmount}
+            onCheckedChange={setShouldUpdateCurrentAmount}
+            aria-label="Update current amount"
+          />
+        </div>
+      </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11">

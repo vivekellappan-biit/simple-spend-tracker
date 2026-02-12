@@ -319,7 +319,7 @@ const BalanceCard = () => {
             <Dialog open={open} onOpenChange={handleOpenChange}>
               <DialogTrigger asChild>
                 <button
-                  className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center"
+                  className="mr-3 p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center"
                   title="Edit initial balance"
                 >
                   <Pencil className="w-3 h-3" />

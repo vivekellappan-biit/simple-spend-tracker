@@ -294,14 +294,14 @@ const InsightsAnalytics = () => {
                     paddingAngle={3}
                   >
                     {categoryData.map((entry, index) => (
-                      <Cell key={entry.name} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+                      <Cell key={`${entry.name}-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
                     ))}
                   </Pie>
                 </PieChart>
               </ChartContainer>
               <div className="max-h-52 w-full overflow-auto pr-1 text-xs min-w-0">
                 {categoryData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center gap-2">
+                  <div key={`${entry.name}-${index}`} className="flex items-center gap-2">
                     <span
                       className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: `hsl(var(--chart-${(index % 5) + 1}))` }}
