@@ -268,9 +268,9 @@ const LendBorrowList = () => {
           </span>
         </div>
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <div className="rounded-lg border border-warning/25 bg-warning/5 p-2.5">
+          <div className="rounded-lg border border-lent/25 bg-lent/5 p-2.5">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Open Lent</p>
-            <p className="text-sm font-mono font-semibold text-warning">{formatCurrency(outstandingLent)}</p>
+            <p className="text-sm font-mono font-semibold text-lent">{formatCurrency(outstandingLent)}</p>
             <p className="text-[11px] text-muted-foreground">{openLentCount} open {openLentCount === 1 ? 'entry' : 'entries'}</p>
           </div>
           <div className="rounded-lg border border-income/25 bg-income/5 p-2.5">
