@@ -38,6 +38,27 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -69,58 +90,15 @@ export type Database = {
           recurring_expense_id?: string | null
           user_id?: string
         }
-        Relationships: []
-      }
-      user_settings: {
-        Row: {
-          created_at: string
-          id: string
-          primary_color: string
-          show_balance: boolean
-          theme_mode: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          primary_color?: string
-          show_balance?: boolean
-          theme_mode?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          primary_color?: string
-          show_balance?: boolean
-          theme_mode?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      expense_categories: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          user_id?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expenses_recurring_expense_id_fkey"
+            columns: ["recurring_expense_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       incomes: {
         Row: {
@@ -229,6 +207,36 @@ export type Database = {
           last_added_date?: string | null
           month_of_year?: number | null
           start_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          primary_color: string
+          show_balance: boolean
+          theme_mode: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          primary_color?: string
+          show_balance?: boolean
+          theme_mode?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          primary_color?: string
+          show_balance?: boolean
+          theme_mode?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

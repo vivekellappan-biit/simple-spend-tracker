@@ -499,8 +499,9 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (data) {
-      const normalized = {
+      const normalized: RecurringExpense = {
         ...data,
+        frequency: data.frequency as RecurringExpense['frequency'],
         amount: Number(data.amount),
         day_of_month: Number(data.day_of_month),
         interval_days: data.interval_days === null ? null : Number(data.interval_days),
@@ -544,11 +545,12 @@ export const ExpenseProvider = ({ children }: { children: ReactNode }) => {
           item.id === id
             ? {
                 ...data,
+                frequency: data.frequency as RecurringExpense['frequency'],
                 amount: Number(data.amount),
                 day_of_month: Number(data.day_of_month),
                 interval_days: data.interval_days === null ? null : Number(data.interval_days),
                 month_of_year: data.month_of_year === null ? null : Number(data.month_of_year),
-              }
+              } as RecurringExpense
             : item
         )
       );
