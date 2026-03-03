@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
 import { useExpenses } from '@/context/ExpenseContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { Plus, CalendarIcon } from 'lucide-react';
 
 const ExpenseForm = ({
   isOpen,
@@ -17,6 +21,7 @@ const ExpenseForm = ({
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
+  const [date, setDate] = useState<Date>(new Date());
   const [internalOpen, setInternalOpen] = useState(false);
   const open = isOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
@@ -30,12 +35,13 @@ const ExpenseForm = ({
       description: description.trim(),
       amount: value,
       category,
-      date: new Date().toISOString().split('T')[0],
+      date: format(date, 'yyyy-MM-dd'),
     });
 
     setDescription('');
     setAmount('');
     setCategory('');
+    setDate(new Date());
     setOpen(false);
   };
 
@@ -86,6 +92,32 @@ const ExpenseForm = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "w-full h-11 justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(d) => d && setDate(d)}
+                  disabled={(d) => d > new Date()}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
